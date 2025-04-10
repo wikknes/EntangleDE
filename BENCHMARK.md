@@ -106,7 +106,7 @@ We measured the overlap in top differentially expressed genes between methods:
 
 1. Clone the repository and install dependencies
 ```bash
-git clone https://github.com/your-username/qdta.git
+git clone https://github.com/wikknes/EntangleDE.git
 cd qdta
 pip install -r requirements.txt
 ```

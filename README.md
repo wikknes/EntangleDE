@@ -17,7 +17,7 @@ QDTA is a computational pipeline for analyzing gene expression changes along pse
 
 ```bash
 # Clone the repository
-git clone https://github.com/your-username/qdta.git
+git clone https://github.com/wikknes/EntangleDE.git
 cd qdta
 
 # Install dependencies
@@ -59,7 +59,7 @@ This project is licensed under the MIT License - see the LICENSE file for detail
 If you use this software in your research, please cite:
 
 ```
-Author, A. (2023). QDTA: Quantum Differential Gene Expression Analysis. GitHub repository. https://github.com/your-username/qdta
+Author, A. (2023). QDTA: Quantum Differential Gene Expression Analysis. GitHub repository. https://github.com/wikknes/qdta
 ```
 
 ## Contact

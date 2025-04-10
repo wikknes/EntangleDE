@@ -1,7 +1,7 @@
 from setuptools import setup, find_packages
 
 setup(
-    name="qdta",
+    name="EntangleDE",
     version="0.1.0",
     packages=find_packages(),
     install_requires=[
@@ -16,7 +16,7 @@ setup(
     ],
     entry_points={
         'console_scripts': [
-            'qdta=main:main',
+            'qdta=main:main',  # Keep QDTA as the short CLI command
         ],
     },
     author="Your Name",
@@ -24,7 +24,7 @@ setup(
     description="Quantum Differential Gene Expression Analysis along Pseudotime Trajectories",
     long_description=open("README.md").read(),
     long_description_content_type="text/markdown",
-    url="https://github.com/your-username/qdta",
+    url="https://github.com/wikknes/EntangleDE",
     classifiers=[
         "Programming Language :: Python :: 3",
         "License :: OSI Approved :: MIT License",
