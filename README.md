@@ -64,4 +64,4 @@ Author, A. (2023). QDTA: Quantum Differential Gene Expression Analysis. GitHub r
 
 ## Contact
 
-For questions or collaboration opportunities, please contact: [your.email@example.com]
+For questions or collaboration opportunities, please contact: [vignesh.kumar@csir.res.in]
