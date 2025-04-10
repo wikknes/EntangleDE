@@ -26,40 +26,134 @@ While EntangleDE doesn't require actual quantum hardware (it uses simulators), i
 
 ## 2. Theoretical Framework
 
-### 2.1 The Quantum Hamiltonian Approach
+### 2.1 Quantum Computing Fundamentals for Beginners
+
+Before diving into the Hamiltonian approach, let's establish some fundamental concepts of quantum computing that EntangleDE leverages:
+
+#### What is Quantum Computing?
+
+Quantum computing is a computational paradigm that uses quantum-mechanical phenomena to perform calculations. Unlike classical computers that use bits (0 or 1), quantum computers use quantum bits or "qubits" that can exist in superpositions of states.
+
+**Key quantum principles used in EntangleDE:**
+
+1. **Superposition**: A qubit can exist in multiple states simultaneously, allowing quantum computers to process a vast number of possibilities at once. In the context of gene analysis, this enables us to simultaneously process multiple gene states and their interactions.
+
+2. **Quantum States**: A quantum system with n qubits can represent 2^n different states simultaneously. For gene expression analysis, this means we can efficiently represent and process thousands of gene interactions in a compact form.
+
+3. **Measurement**: When a quantum system is measured, it "collapses" to a specific state with a probability determined by the system's current configuration. EntangleDE uses these measurement outcomes to extract patterns in gene expression data.
+
+4. **Unitary Operations**: Quantum operations must preserve the total probability of a system (conserve information). This property is particularly useful for modeling biological systems where we need to ensure physical validity of our transformations.
+
+#### Quantum Circuits
+
+A quantum circuit is a sequence of quantum operations (gates) applied to qubits. EntangleDE uses quantum circuits to:
+
+1. Encode gene expression patterns into quantum states
+2. Apply transformations that model how genes influence each other over time
+3. Extract information about significant patterns through measurements
+
+### 2.2 The Quantum Hamiltonian Approach
 
 The core innovation in EntangleDE is mapping gene expression data to a quantum Hamiltonian framework. In quantum mechanics, the Hamiltonian operator (H) represents the total energy of a system and governs its time evolution according to Schrödinger's equation:
 
 $i\hbar \frac{\partial}{\partial t}|\psi(t)\rangle = H|\psi(t)\rangle$
 
+**In simpler terms:** This equation describes how a quantum system (like our gene expression patterns) evolves over time under the influence of a Hamiltonian operator (H). The Hamiltonian essentially encodes the "rules" or "dynamics" of the system.
+
 EntangleDE creates a Hamiltonian matrix where:
-- Matrix elements represent transition rates between gene expression states
-- The structure encodes how gene expression changes along pseudotime
+- Matrix elements represent transition rates between gene expression states (how one gene influences another)
+- The structure encodes how gene expression changes along pseudotime (developmental trajectory)
 - Time evolution of this system reveals characteristic patterns (eigenvalues and eigenstates)
 
-### 2.2 Hamiltonian Construction from Gene Expression Data
+**Why use Hamiltonians for gene expression?** The Hamiltonian framework naturally captures complex interactions and time-dependent behavior, which is ideal for modeling gene regulatory networks that evolve during biological processes like cell differentiation or disease progression.
 
-The process of creating the Hamiltonian follows these mathematical steps:
+### 2.3 Hamiltonian Construction from Gene Expression Data
 
-1. Start with normalized gene expression data matrix E(g,c) where g indexes genes and c indexes cells
-2. Sort cells by pseudotime τ
-3. Calculate expression changes between consecutive timepoints: ΔE(g) = [E(g,t+1) - E(g,t)]/Δτ
-4. Construct the transition matrix H where each element H(i,j) represents how gene j influences the expression change of gene i:
+The process of creating the Hamiltonian from raw gene expression data follows these steps:
+
+#### Step 1: Data Preparation
+Single-cell RNA sequencing (scRNA-seq) data is first preprocessed:
+- Gene expression values are log-transformed to handle the typical skewed distribution in RNA-seq data
+- Values are normalized to a [0,1] range for each gene to ensure comparability
+- Cells are ordered by pseudotime (a computational estimate of a cell's progress through a biological process)
+
+#### Step 2: Calculate Expression Changes
+For each gene (g) and consecutive time points (t):
+1. Calculate the expression difference: ΔE(g) = [E(g,t+1) - E(g,t)]
+2. Normalize by the pseudotime difference: ΔE(g)/Δτ
+   
+**Biological meaning:** This captures how quickly each gene's expression is changing at different points in the developmental trajectory.
+
+#### Step 3: Model Gene Interactions
+For each pair of genes (i,j):
+1. Calculate how gene j's expression correlates with gene i's rate of change
+2. This forms the element H(i,j) in our Hamiltonian matrix:
    $H(i,j) = \sum_{t} E(j,t) \cdot \Delta E(i,t)$
-5. Ensure Hermiticity (required for valid quantum Hamiltonians) by symmetrizing: H = (H + H†)/2
 
-This Hamiltonian essentially encodes a dynamical model of gene expression regulation, where genes influence each other's expression changes over time.
+**Biological interpretation:** H(i,j) represents how gene j might be influencing the expression change of gene i. A high positive value suggests gene j activates gene i, while a negative value suggests inhibition.
 
-### 2.3 Quantum Circuit Implementation
+#### Step 4: Ensure Quantum Compatibility
+To use this matrix in quantum computing, we ensure it has the mathematical property of being "Hermitian" (self-adjoint):
+- Symmetrize the matrix: H = (H + H†)/2
+- This ensures the resulting quantum operations will be physically valid
 
-To process this Hamiltonian using quantum computing principles, EntangleDE:
+**In code** (simplified from `hamiltonian_embedding.py`):
+```python
+# Calculate transition rates between consecutive time points
+transition_rates = np.zeros((n_genes, n_genes))
+for t in range(n_cells-1):
+    # Calculate expression differences
+    dE = (sorted_data[:, t+1] - sorted_data[:, t]) / dt[t]
+    
+    # Update transition rates based on expression changes
+    for i in range(n_genes):
+        for j in range(n_genes):
+            # Model how gene j influences expression change of gene i
+            transition_rates[i, j] += sorted_data[j, t] * dE[i]
 
-1. Performs eigendecomposition of the Hamiltonian: H = VDV†, where D contains eigenvalues
-2. Creates a unitary time-evolution operator: U = e^(-iHt) = V e^(-iDt) V†
-3. Implements this unitary operator on a quantum circuit using Qiskit
-4. Simulates the circuit and collects measurement statistics
+# Ensure Hermitian property for Hamiltonian
+hamiltonian = (transition_rates + transition_rates.T) / 2
+```
 
-The quantum circuit effectively performs time evolution under the gene expression Hamiltonian, revealing which genes show significant dynamical patterns.
+### 2.4 Quantum Circuit Implementation
+
+To process this Hamiltonian using quantum computing principles, EntangleDE converts the mathematical model into operations that can be performed on a quantum computer:
+
+#### Step 1: Eigendecomposition
+The Hamiltonian is decomposed into its eigenvalues and eigenvectors:
+- H = VDV†, where D contains eigenvalues and V contains eigenvectors
+- **Biological meaning:** Eigenvalues represent the strength of different patterns in gene expression dynamics, while eigenvectors represent the patterns themselves
+
+#### Step 2: Create Quantum Time Evolution Operator
+We create a unitary operator that represents how the system evolves over time:
+- U = e^(-iHt) = V e^(-iDt) V†
+- The parameter t controls how long we "run" the simulation
+
+#### Step 3: Implement Quantum Circuit
+Using Qiskit (a quantum computing framework):
+1. Create a quantum circuit with enough qubits to represent our gene space
+2. Apply the unitary time-evolution operator to the circuit
+3. Add measurement operations to extract the results
+
+```python
+# Create quantum circuit
+circuit = QuantumCircuit(num_qubits)
+
+# Calculate time evolution operator using eigendecomposition
+eigenvalues, eigenvectors = np.linalg.eigh(hamiltonian)
+unitary_matrix = eigenvectors @ np.diag(np.exp(-1j * time_evolution * eigenvalues)) @ eigenvectors.conj().T
+
+# Apply evolution operator to circuit
+circuit.unitary(evolution_operator, range(num_qubits))
+```
+
+#### Step 4: Simulate and Measure
+The circuit is simulated and measured multiple times:
+1. Each measurement produces a quantum state
+2. The probability distribution of these states reveals important patterns
+3. States with higher probabilities indicate dominant gene expression patterns
+
+**Connection to gene expression:** The measurement outcomes tell us which combinations of genes are most important in the expression dynamics, helping identify key regulatory genes.
 
 ## 3. EntangleDE Architecture and Implementation
 
@@ -141,46 +235,192 @@ Importantly, EntangleDE extracts several quantum signatures:
 - **State probabilities**: Indicate dominant configurations in the system
 - **Quantum entropy**: Measures complexity of the expression dynamics
 
-## 4. Data Flow and Processing Pipeline
+## 4. Understanding Single-Cell RNA-seq Data and the EntangleDE Processing Pipeline
 
-### 4.1 Data Preprocessing
+### 4.1 Introduction to Single-Cell RNA Sequencing (scRNA-seq)
 
-EntangleDE applies several preprocessing steps to ensure optimal analysis:
+#### What is scRNA-seq?
 
-1. **Log transformation**: Applies log1p transformation to handle the skewed nature of expression data
-2. **Min-max normalization**: Scales each gene's expression to [0,1] range 
-3. **Dimensionality reduction**: Optional PCA step for datasets with many genes
-4. **Pseudotime ordering**: Arranges cells in order of biological progression
+Single-cell RNA sequencing (scRNA-seq) is a powerful technology that allows researchers to measure gene expression in individual cells rather than in bulk tissue samples. This provides unprecedented resolution to:
 
-These steps prepare the data for quantum Hamiltonian embedding by removing technical biases and focusing on biologically relevant patterns.
+1. Identify rare cell types within a tissue
+2. Track cells as they progress through developmental processes
+3. Understand cell-to-cell variability in gene expression
+4. Discover new cell states and transitions
 
-### 4.2 Quantum Analysis Workflow
+#### Key Characteristics of scRNA-seq Data
 
-The quantum analysis follows these steps:
+For those new to scRNA-seq analysis, it's important to understand several unique aspects of this data type:
 
-1. **Hamiltonian construction**: Builds matrix from preprocessed data
-2. **Circuit encoding**: Converts Hamiltonian to quantum circuit
-3. **Circuit execution**: Runs simulation with multiple measurements
-4. **Signature extraction**: Collects eigenvalues and measurement statistics
-5. **Gene scoring**: Maps quantum signatures back to gene space
-6. **Ranking**: Orders genes by their differential expression score
+1. **High dimensionality**: A typical dataset contains expression measurements for 20,000+ genes across hundreds to thousands of cells.
 
-This workflow effectively transforms the gene expression problem into a quantum evolution problem, then extracts meaningful patterns from the quantum signatures.
+2. **Sparsity**: Due to technical limitations, many genes show zero counts in individual cells even when they are actually expressed (known as "dropout events").
 
-### 4.3 Visualization and Result Interpretation
+3. **Technical noise**: Various technical factors can introduce noise, including sequencing depth differences, batch effects, and amplification biases.
 
-EntangleDE generates several visualizations to help interpret the results:
+4. **Biological heterogeneity**: Cells in different states or phases naturally show different expression profiles, creating a complex mixture of signals.
 
-1. **Eigenvalue plots**: Show dominant patterns from the Hamiltonian
-2. **Quantum state distributions**: Visualize the measurement outcomes
-3. **Gene expression trajectories**: Plot top genes along pseudotime
-4. **Weight distributions**: Show how quantum weights are distributed
-5. **Method comparisons**: Compare quantum vs. classical approaches
+#### What is Pseudotime?
 
-The output files include:
-- CSV files with ranked gene lists
-- Performance metrics
-- Visualization images
+A critical concept in scRNA-seq analysis is **pseudotime** - a computational method to order cells along a trajectory representing a biological process such as:
+- Differentiation (stem cells becoming specialized cells)
+- Disease progression
+- Cellular response to treatment
+
+Unlike real time (measured in hours/days), pseudotime is a relative measure that orders cells based on their molecular similarity, creating a continuum from early to late stages of a process.
+
+### 4.2 Data Preprocessing in EntangleDE
+
+EntangleDE applies several specialized preprocessing steps to prepare scRNA-seq data for quantum analysis:
+
+#### 1. Log Transformation
+
+**What**: Apply log1p transformation (log(x+1)) to all expression values.
+
+**Why**: Raw RNA-seq data is typically highly skewed, with a few genes having very high counts while most have low counts. Log transformation makes the distribution more symmetric and reduces the influence of extremely high values.
+
+**Code snippet from `quantum_gene_analysis.py`:**
+```python
+# Log transform (adding small constant to avoid log(0))
+log_data = np.log1p(expression_data)
+```
+
+#### 2. Min-Max Normalization
+
+**What**: Scale each gene's expression to a [0,1] range.
+
+**Why**: This ensures all genes contribute equally to the analysis regardless of their absolute expression level, focusing the analysis on relative changes.
+
+```python
+# Min-max normalization to [0,1] range per gene
+norm_data = np.zeros_like(log_data)
+for i in range(log_data.shape[0]):
+    gene_min = np.min(log_data[i, :])
+    gene_max = np.max(log_data[i, :])
+    if gene_max > gene_min:
+        norm_data[i, :] = (log_data[i, :] - gene_min) / (gene_max - gene_min)
+    else:
+        norm_data[i, :] = 0.5  # Set to middle value if no variation
+```
+
+#### 3. Dimensionality Reduction (Optional)
+
+**What**: Use Principal Component Analysis (PCA) to reduce the number of dimensions.
+
+**Why**: Most scRNA-seq datasets contain thousands of genes, but many co-express in patterns. PCA captures these patterns while reducing computational complexity.
+
+**Biological interpretation**: The principal components represent major axes of variation in the data, often corresponding to biological processes or cell states.
+
+```python
+# Perform PCA
+pca = PCA(n_components=min(n_components, min(data_t.shape)))
+reduced_data_t = pca.fit_transform(data_t)
+```
+
+#### 4. Pseudotime Ordering
+
+**What**: Order cells based on their progress through a biological process.
+
+**Why**: This temporal ordering is essential for modeling how gene expression changes during development, differentiation, or disease progression.
+
+**Note**: EntangleDE doesn't calculate pseudotime itself but accepts it as input, allowing flexibility to use results from specialized tools like Monocle, Slingshot, or Palantir.
+
+### 4.3 From Gene Expression to Quantum Analysis: The Complete Workflow
+
+EntangleDE's pipeline transforms scRNA-seq data into quantum analysis results through these key steps:
+
+#### Step 1: Data Loading and Initial Processing
+- Load gene expression matrix, pseudotime values, and gene names
+- Apply preprocessing steps (log transformation, normalization)
+- Optionally reduce dimensions with PCA
+
+#### Step 2: Hamiltonian Construction
+- Order cells by pseudotime to create a trajectory
+- Calculate gene expression changes between consecutive timepoints
+- Build the Hamiltonian matrix that models gene-gene interactions
+
+**Biological meaning**: The Hamiltonian represents a network of gene influences - which genes might be regulating others during the biological process.
+
+#### Step 3: Quantum Circuit Implementation and Simulation
+- Create a quantum circuit with sufficient qubits to represent the gene space
+- Encode the Hamiltonian as a time-evolution operator
+- Simulate the circuit's behavior and collect measurement outcomes
+
+**Biological meaning**: The simulation reveals which combinations of genes create stable patterns over time (like gene regulatory networks).
+
+#### Step 4: Quantum Signature Extraction
+- Extract eigenvalues from the Hamiltonian (representing strength of patterns)
+- Analyze measurement probabilities to identify dominant states
+- Calculate quantum entropy to measure system complexity
+
+```python
+# Eigenvalue estimation
+eigenvalues = np.linalg.eigvals(hamiltonian)
+sorted_eigenvalues = np.sort(np.real(eigenvalues))[::-1]  # Sort in descending order
+
+# State probabilities
+probabilities = {}
+for state, count in counts.items():
+    probabilities[state] = count / n_measurements
+```
+
+#### Step 5: Gene Scoring and Ranking
+- Map quantum measurements back to the original gene space
+- Use eigenvalues to weight gene importance
+- Combine with expression changes to calculate final differential expression scores
+
+**Key innovation**: By weighting genes according to their contribution to quantum eigenvalues, EntangleDE prioritizes genes that participate in coordinated expression programs rather than just those with large individual changes.
+
+```python
+# Final score combines difference magnitude and eigenvalue weighting
+final_scores = diff_scores * eigen_weights
+```
+
+#### Step 6: Visualization and Interpretation
+- Generate diagnostic plots
+- Rank genes by their differential expression scores
+- Compare quantum results with classical methods
+
+### 4.4 Interpreting EntangleDE Results
+
+EntangleDE generates several visualizations to help biologists interpret the results:
+
+#### 1. Eigenvalue Plots
+**What they show**: The distribution and magnitude of eigenvalues from the Hamiltonian.
+**How to interpret**: Larger eigenvalues indicate stronger patterns in the data. A large gap between top eigenvalues and the rest suggests a few dominant regulatory programs.
+
+#### 2. Quantum State Distributions
+**What they show**: The probability of different quantum states after circuit simulation.
+**How to interpret**: High-probability states represent important configurations of gene activity, often corresponding to cell states or transition points.
+
+#### 3. Gene Expression Trajectories
+**What they show**: Expression profiles of top-ranked genes along pseudotime.
+**How to interpret**: Look for patterns such as gradual increases/decreases, sharp transitions, or pulse-like behavior. These patterns can suggest specific roles in the biological process, such as:
+- Early activators (increase at the beginning)
+- Transition markers (change at critical points)
+- Terminal state markers (increase at the end)
+- Transient activators (pulse-like patterns)
+
+#### 4. Weight Distributions
+**What they show**: How quantum weights are distributed across genes.
+**How to interpret**: Skewed distributions (few genes with high weights) suggest a small number of "driver" genes, while broader distributions suggest distributed control.
+
+#### 5. Method Comparisons
+**What they show**: Agreement between EntangleDE and classical differential expression methods.
+**How to interpret**: 
+- Genes found by both approaches are high-confidence candidates
+- Genes unique to EntangleDE often show more complex temporal patterns
+- Genes unique to classical methods may show simple but large changes
+
+#### Output Files
+EntangleDE produces several output files:
+- **quantum_top_genes.csv**: Ranked list of genes identified by quantum analysis
+- **classical_top_genes.csv**: Comparison results from classical methods
+- **eigenvalues.png**: Visualization of Hamiltonian eigenvalues
+- **quantum_states.png**: Distribution of measured quantum states
+- **gene_weights_distribution.png**: Distribution of quantum weights
+- **top_genes_expression.png**: Expression trajectories of top-ranked genes
+- **execution_time_comparison.png**: Performance metrics comparing methods
 
 ## 5. Mathematical Foundation
 
@@ -383,49 +623,125 @@ EntangleDE has been validated on several biological datasets:
 
 Pathway analysis consistently shows that EntangleDE-unique genes are enriched for complex regulatory functions and feedback mechanisms.
 
-## 10. Conclusion and Future Work
+## 10. Why Quantum Computing for Gene Expression Analysis? 
 
-### 10.1 Summary of EntangleDE's Innovations
+### 10.1 Advantages of the Quantum Approach for Biological Data
+
+While EntangleDE currently uses quantum simulators rather than actual quantum hardware, its quantum-inspired mathematical framework provides several key advantages for gene expression analysis:
+
+#### 1. Natural Representation of Complex Biological Systems
+
+**Problem with classical approaches**: Gene regulatory networks are inherently complex, with many-to-many relationships, feedback loops, and non-linear dynamics.
+
+**Quantum advantage**: Quantum systems are governed by similar principles of superposition, entanglement, and complex interference patterns. The Hamiltonian formalism naturally captures:
+- Multi-gene interactions (beyond pairwise comparisons)
+- Time-dependent behaviors (through evolution operators)
+- State transitions (through eigenvalue/eigenvector analysis)
+
+**For non-specialists**: Think of genes like musicians in an orchestra. Classical methods often focus on how loud each musician plays individually. Quantum methods can capture how the musicians coordinate with each other to create harmonies and complex musical patterns.
+
+#### 2. Dimensionality Handling
+
+**Problem with classical approaches**: Gene expression data is high-dimensional (thousands of genes), making it computationally intensive to analyze all possible interactions.
+
+**Quantum advantage**: A quantum system with n qubits can represent 2^n states simultaneously. EntangleDE leverages this exponential representation capacity through:
+- Compact encoding of gene-gene interactions in the Hamiltonian matrix
+- Efficient simulation of system evolution
+- Extraction of dominant patterns through eigendecomposition
+
+**Practical impact**: EntangleDE can identify complex multi-gene expression patterns without exhaustively testing all gene combinations.
+
+#### 3. Non-Linear Pattern Detection
+
+**Problem with classical approaches**: Many classical methods rely on linear correlations or simple differential tests that may miss subtle, non-linear patterns.
+
+**Quantum advantage**: The Hamiltonian evolution captures non-linear dynamics through:
+- Higher-order interactions in the matrix structure
+- Time evolution that follows complex trajectories
+- Eigenvalue decomposition that naturally identifies dominant modes
+
+**Real-world application**: EntangleDE excels at finding genes with pulse-like, sigmoidal, or oscillatory patterns that are often missed by simple correlation or fold-change methods.
+
+#### 4. Integration of Temporal Information
+
+**Problem with classical approaches**: Many methods treat time points as independent samples or use simple "early vs. late" comparisons.
+
+**Quantum advantage**: The Hamiltonian inherently models the system's evolution through time, incorporating:
+- Sequential changes in gene expression
+- Rate of change information (derivatives)
+- Continuity constraints across the trajectory
+
+**Biological relevance**: This matches how biological processes unfold as continuous progressions rather than discrete steps.
+
+### 10.2 Connecting Quantum Concepts to Biological Phenomena
+
+For biologists new to quantum concepts, these analogies may help connect the quantum framework to familiar biological phenomena:
+
+| Quantum Concept | Biological Analogy |
+|-----------------|-------------------|
+| **Superposition** | A gene that can have different roles in different cell types or states |
+| **Entanglement** | Co-regulated genes that always change expression together |
+| **Hamiltonian** | The gene regulatory network that controls expression patterns |
+| **Eigenvalues** | The strength of different regulatory programs in the cell |
+| **Eigenvectors** | The specific combinations of genes involved in each program |
+| **Quantum measurement** | Observing which gene programs are active at a specific point |
+| **Quantum evolution** | How gene expression patterns change over developmental time |
+
+### 10.3 Current Limitations and Challenges
+
+While the quantum approach offers many advantages, several limitations should be considered:
+
+1. **Computational overhead**: The quantum simulation introduces computational costs that can be significant for very large datasets.
+
+2. **Dimensionality challenges**: Datasets with tens of thousands of genes require dimensionality reduction, potentially losing some information.
+
+3. **Interpretability**: Quantum signatures can be more challenging to interpret than simple fold changes or p-values from classical methods.
+
+4. **Parameter sensitivity**: Results may depend on choices like the time parameter for Hamiltonian evolution.
+
+5. **Biological validation**: As with any computational method, experimental validation of predictions remains essential.
+
+### 10.4 Future Development Roadmap
+
+EntangleDE's future development will focus on addressing limitations and expanding capabilities:
+
+#### Near-term Enhancements
+
+1. **Enhanced biological priors**: Incorporating known gene regulatory networks into Hamiltonian construction to improve biological relevance.
+
+2. **Multi-trajectory analysis**: Extending to branching trajectories in cell differentiation processes.
+
+3. **Interactive visualization tools**: Developing more sophisticated interfaces for exploring quantum signatures.
+
+4. **Integration with single-cell multi-omics**: Extending the framework to incorporate epigenetic, proteomic, or spatial data.
+
+#### Long-term Vision: Real Quantum Hardware Implementation
+
+As quantum computing technology matures, EntangleDE could transition from simulators to actual quantum hardware:
+
+1. **Variational quantum circuits**: Replace exact Hamiltonian simulation with variational approaches suitable for NISQ-era quantum computers.
+
+2. **Quantum feature maps**: Implement more efficient encoding of gene expression data into quantum states.
+
+3. **Hybrid quantum-classical algorithms**: Use quantum processors for specific computationally intensive steps while keeping pre/post-processing classical.
+
+4. **Quantum advantage demonstration**: Show computational speedup for specific gene expression analysis tasks on quantum hardware.
+
+These developments will further enhance EntangleDE's utility for complex biological investigations and position it at the frontier of quantum computational biology.
+
+### 10.5 Summary: The Entanglement of Quantum Computing and Gene Expression
 
 EntangleDE represents a significant innovation in gene expression analysis through:
 
-1. **Novel quantum framework**: Using Hamiltonian embedding to model gene expression dynamics
+1. **Novel quantum framework**: Using Hamiltonian embedding to model gene expression dynamics in a way that naturally captures complex biological relationships.
 
-2. **Pattern sensitivity**: Enhanced ability to detect complex, non-linear expression patterns
+2. **Pattern sensitivity**: Enhanced ability to detect complex, non-linear expression patterns that may be missed by classical methods.
 
-3. **Integrated approach**: Combining quantum principles with traditional bioinformatics
+3. **Integrated approach**: Combining quantum principles with traditional bioinformatics to leverage the best of both worlds.
 
-4. **Scalable implementation**: Practical application to real-world biological datasets
+4. **Scalable implementation**: Practical application to real-world biological datasets through efficient simulation.
 
-These innovations enable researchers to extract more nuanced insights from temporal gene expression data.
-
-### 10.2 Current Limitations
-
-Important limitations to consider include:
-
-1. **Quantum simulation overhead**: The approach incurs computational costs from quantum simulation
-
-2. **Dimensionality challenges**: Very large gene sets require dimensionality reduction
-
-3. **Interpretability**: Quantum signatures can be more challenging to interpret than simple correlations
-
-4. **Parameter sensitivity**: Results may depend on choices like the time parameter
-
-### 10.3 Future Development Roadmap
-
-Planned future developments include:
-
-1. **Real quantum hardware integration**: Adapting algorithms for NISQ-era quantum computers
-
-2. **Enhanced biological priors**: Incorporating known gene regulatory networks into Hamiltonian construction
-
-3. **Multi-trajectory analysis**: Extending to branching trajectories in cell differentiation
-
-4. **Interactive visualization tools**: More sophisticated exploration of results
-
-5. **Integration with single-cell multi-omics**: Extending to multiple data types
-
-These developments will further enhance EntangleDE's utility for complex biological investigations.
+These innovations enable researchers to extract more nuanced insights from temporal gene expression data, potentially revealing biological mechanisms that would remain hidden using conventional approaches.
 
 ## References
 
