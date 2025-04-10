@@ -338,4 +338,4 @@ The QDTA pipeline is under active development. Upcoming features include:
 
 ## Contact
 
-For questions, issues, or contributions, please contact: [your.email@example.com]
+For questions, issues, or contributions, please contact: [vignesh.kumar@csir.res.in]
