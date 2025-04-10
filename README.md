@@ -54,13 +54,6 @@ For detailed usage instructions, principles, and examples, see the [COOKBOOK.md]
 
 This project is licensed under the MIT License - see the LICENSE file for details.
 
-## Citation
-
-If you use this software in your research, please cite:
-
-```
-Author, A. (2023). QDTA: Quantum Differential Gene Expression Analysis. GitHub repository. https://github.com/wikknes/qdta
-```
 
 ## Contact
 
