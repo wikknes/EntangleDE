@@ -9,6 +9,7 @@ import time
 import os
 import psutil
 import matplotlib.pyplot as plt
+import networkx as nx  # Add missing import for nx
 import scanpy as sc
 from sklearn.metrics import adjusted_rand_score, silhouette_score
 from scipy.stats import spearmanr, kendalltau
