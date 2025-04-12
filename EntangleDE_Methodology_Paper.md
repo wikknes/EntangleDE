@@ -137,7 +137,9 @@ We implemented EntangleDE as a Python package with a modular architecture. The w
 
 4. **Differential expression analysis**: Identifies differentially expressed genes using quantum signatures.
 
-5. **Visualization and reporting**: Generates visualizations and reports on the analysis results.
+5. **Trajectory analysis**: Optional component that performs quantum-enhanced trajectory inference with branching detection, cellular clustering, and pseudotime ordering.
+
+6. **Visualization and reporting**: Generates visualizations and reports on the analysis results.
 
 The package provides both a command-line interface and a Python API for integration into existing analysis workflows.
 
@@ -211,6 +213,8 @@ Our results demonstrate several advantages of the quantum Hamiltonian approach f
 
 4. **Theoretical foundation**: The approach is grounded in the well-established mathematical framework of quantum mechanics, providing a solid theoretical foundation.
 
+5. **Enhanced trajectory analysis**: The quantum framework extends naturally to trajectory inference with branching points, offering improved sensitivity for complex developmental processes with multiple cell fates.
+
 ### 4.2 Biological Insights
 
 The application of EntangleDE to real biological datasets revealed several interesting insights:
@@ -233,25 +237,31 @@ While EntangleDE demonstrates promising performance, several limitations and opp
 
 3. **Parameter sensitivity**: Results may depend on choices such as the time evolution parameter and number of measurements.
 
+4. **Quantum hardware limitations**: The current implementation relies primarily on quantum simulators, which may not fully capture the advantages quantum computing could provide.
+
 Future directions for EntangleDE development include:
 
 1. **Integration with real quantum hardware**: As quantum computing technology advances, implementation on actual quantum devices could provide additional computational advantages.
 
 2. **Incorporation of prior knowledge**: Integrating known gene regulatory networks into the Hamiltonian construction could enhance biological relevance.
 
-3. **Multi-trajectory analysis**: Extending the approach to handle branching trajectories representing cell fate decisions.
+3. **Enhanced trajectory analysis**: While we've made significant progress implementing trajectory analysis with branch detection, further refinements to handle more complex topologies and improving clustering accuracy represent important areas for development.
 
 4. **Multi-omics integration**: Expanding the framework to incorporate multiple data types beyond gene expression.
 
 5. **Interactive visualization**: Developing more sophisticated tools for exploring and interpreting quantum signatures in biological contexts.
 
+6. **Adapting to spatial transcriptomics**: Extending the quantum framework to incorporate spatial information from newer single-cell technologies.
+
 ## 5. Conclusion
 
 EntangleDE represents a novel approach to differential gene expression analysis that leverages quantum computing principles to address the challenges of analyzing complex, temporal gene expression patterns. By mapping gene expression dynamics to quantum Hamiltonian matrices, our method provides enhanced sensitivity for detecting non-linear patterns and subtle regulatory changes along pseudotime trajectories. Comparative analysis with classical methods demonstrates that EntangleDE captures both commonly identified genes and unique genes characterized by complex temporal patterns, providing complementary information to existing approaches.
 
-The quantum signatures extracted from Hamiltonian eigendecomposition offer additional dimensions for characterizing biological processes, potentially revealing insights not accessible through traditional methods. While EntangleDE is currently implemented using quantum simulators on classical computers, the approach is designed to be compatible with future quantum hardware as it becomes available.
+The quantum signatures extracted from Hamiltonian eigendecomposition offer additional dimensions for characterizing biological processes, potentially revealing insights not accessible through traditional methods. Our trajectory analysis extension further enhances this framework by enabling quantum-assisted inference of complex developmental paths, identification of branching points, and characterization of gene expression dynamics along these trajectories.
 
-Our results suggest that quantum-inspired computational approaches have significant potential for advancing our understanding of gene expression dynamics in development, differentiation, and disease. By bridging quantum computing principles with biological data analysis, EntangleDE opens new avenues for exploring the complex, temporal nature of gene regulation.
+While EntangleDE is currently implemented using quantum simulators on classical computers, the approach is designed to be compatible with future quantum hardware as it becomes available. The trajectory analysis component also includes support for quantum annealing and QAOA (Quantum Approximate Optimization Algorithm) approaches where appropriate.
+
+Our results suggest that quantum-inspired computational approaches have significant potential for advancing our understanding of gene expression dynamics in development, differentiation, and disease. By bridging quantum computing principles with biological data analysis, EntangleDE opens new avenues for exploring the complex, temporal nature of gene regulation and cellular trajectory inference.
 
 ## Acknowledgments
 

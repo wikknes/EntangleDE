@@ -7,6 +7,7 @@ import os
 
 from src.quantum_gene_analysis import quantum_differential_analysis
 from src.classical_benchmark import classical_differential_analysis, compare_methods
+from src.trajectory_analysis import quantum_trajectory_analysis, QuantumTrajectoryAnalysis
 
 def load_data(expression_file, pseudotime_file=None, gene_names_file=None):
     """
@@ -85,7 +86,7 @@ def load_data(expression_file, pseudotime_file=None, gene_names_file=None):
 
 def run_pipeline(expression_data, pseudotime, gene_names=None, n_components=20, 
                 time_param=1.0, n_measurements=1024, output_dir="output", 
-                run_classical=True, top_n=20):
+                run_classical=True, top_n=20, run_trajectory=False):
     """
     Run the complete quantum differential gene expression analysis pipeline.
     
@@ -99,6 +100,7 @@ def run_pipeline(expression_data, pseudotime, gene_names=None, n_components=20,
         output_dir (str): Directory to save output files
         run_classical (bool): Whether to run classical analysis for comparison
         top_n (int): Number of top genes to compare between methods
+        run_trajectory (bool): Whether to run trajectory analysis
     
     Returns:
         dict: Complete analysis results
@@ -137,6 +139,33 @@ def run_pipeline(expression_data, pseudotime, gene_names=None, n_components=20,
         
         results['classical'] = classical_results
         results['comparison'] = comparison
+    
+    # Run trajectory analysis if requested
+    if run_trajectory:
+        print("\n==== Running Quantum Trajectory Analysis ====")
+        trajectory_output_dir = os.path.join(output_dir, "trajectory")
+        os.makedirs(trajectory_output_dir, exist_ok=True)
+        
+        start_time = time.time()
+        trajectory_results = quantum_trajectory_analysis(
+            expression_data, 
+            pseudotime, 
+            gene_names,
+            n_components=n_components,
+            time_param=time_param,
+            n_measurements=n_measurements,
+            quantum_backend='qiskit',  # Default to qiskit
+            output_dir=trajectory_output_dir
+        )
+        end_time = time.time()
+        
+        trajectory_execution_time = end_time - start_time
+        print(f"Trajectory analysis completed in {trajectory_execution_time:.2f} seconds")
+        
+        results['trajectory'] = {
+            'results': trajectory_results,
+            'execution_time': trajectory_execution_time
+        }
     
     # Save top differentially expressed genes
     save_top_genes(quantum_results, gene_names, output_dir, "quantum_top_genes.csv")
