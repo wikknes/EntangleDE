@@ -1,0 +1,13 @@
+Metric,Value
+Quantum Runtime (s),0.05192708969116211
+Classical Runtime (s),0.5711548328399658
+Memory Usage (MB),62.828125
+Top-5 Quantum Accuracy (%),100.0
+Top-5 Classical Accuracy (%),100.0
+Top-5 Overlap (%),40.0
+Top-10 Quantum Accuracy (%),100.0
+Top-10 Classical Accuracy (%),100.0
+Top-10 Overlap (%),100.0
+Top-20 Quantum Accuracy (%),N/A
+Top-20 Classical Accuracy (%),N/A
+Top-20 Overlap (%),N/A
